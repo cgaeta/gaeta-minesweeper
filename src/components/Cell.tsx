@@ -37,43 +37,28 @@ const collectProximateEmptyCells = (
 };
 
 const CellNumber = ({ number }: { number: number }) => {
-  if (number === 0) {
-    return null;
+  switch (number) {
+    case 0:
+      return null;
+    case 1:
+      return <span className="font-semibold text-blue-800">1</span>;
+    case 2:
+      return <span className="font-semibold text-green-700">2</span>;
+    case 3:
+      return <span className="font-semibold text-red-600">3</span>;
+    case 4:
+      return <span className="font-semibold text-indigo-900">4</span>;
+    case 5:
+      return <span className="font-semibold text-yellow-900">5</span>;
+    case 6:
+      return <span className="font-semibold text-green-700">6</span>;
+    case 7:
+      return <span className="font-semibold text-gray-800">7</span>;
+    case 8:
+      return <span className="font-semibold text-gray-700">8</span>;
+    default:
+      return null;
   }
-
-  if (number === 1) {
-    return <span className="font-semibold text-blue-800">1</span>;
-  }
-
-  if (number === 2) {
-    return <span className="font-semibold text-green-700">2</span>;
-  }
-
-  if (number === 3) {
-    return <span className="font-semibold text-red-600">3</span>;
-  }
-
-  if (number === 4) {
-    return <span className="font-semibold text-indigo-900">4</span>;
-  }
-
-  if (number === 5) {
-    return <span className="font-semibold text-yellow-900">5</span>;
-  }
-
-  if (number === 6) {
-    return <span className="font-semibold text-green-700">6</span>;
-  }
-
-  if (number === 7) {
-    return <span className="font-semibold text-gray-800">7</span>;
-  }
-
-  if (number === 8) {
-    return <span className="font-semibold text-gray-700">8</span>;
-  }
-
-  return null;
 };
 
 export const Cell = ({
