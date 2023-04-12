@@ -97,13 +97,18 @@ export const Cell = ({
   const clicked = clickedCells.has(idx);
   const flagged = flaggedCells.has(idx);
   const isMine = mineMap.has(idx);
-  const proximateMines = useMemo(() => {
-    const cells = getProximateCells(idx, w, h).reduce(
-      (acc, cur) => (mineMap.has(cur) ? acc + 1 : acc),
-      0
-    );
-    return cells;
-  }, [mineMap, idx]);
+  const proximateMines = useMemo(
+    () => getProximateCells(idx, w, h),
+    [w, h, idx]
+  );
+  const proximateMineCount = useMemo(
+    () =>
+      proximateMines.reduce(
+        (acc, cur) => (mineMap.has(cur) ? acc + 1 : acc),
+        0
+      ),
+    [proximateMines, mineMap]
+  );
 
   if (clicked)
     return isMine ? (
@@ -111,8 +116,30 @@ export const Cell = ({
         &#128163;
       </button>
     ) : (
-      <button className="block text-base border-box p-0 text-sm w-8 h-8 bg-gray-400">
-        <CellNumber number={proximateMines} />
+      <button
+        className="block text-base border-box p-0 text-sm w-8 h-8 bg-gray-400"
+        disabled={gameLost}
+        onAuxClick={() => {
+          const flaggedCellCount = proximateMines.reduce(
+            (acc, cur) => (flaggedCells.has(cur) ? acc + 1 : acc),
+            0
+          );
+          if (flaggedCellCount === proximateMineCount) {
+            proximateMines.forEach((c) => {
+              if (!flaggedCells.has(c)) {
+                clickedCells.add(c);
+
+                if (mineMap.has(c)) {
+                  setGameLost(true);
+                }
+              }
+
+              setClickedCells(new Set(clickedCells));
+            });
+          }
+        }}
+      >
+        <CellNumber number={proximateMineCount} />
       </button>
     );
 
