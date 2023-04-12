@@ -1,13 +1,10 @@
 import { useState } from "react";
+import { useSettings, useGameState } from "../hooks";
 
 export type GameSettings = { width: number; height: number; mines: number };
-export const Settings = ({
-  setGameSettings,
-  setGameStarted,
-}: {
-  setGameSettings: (settings: GameSettings) => void;
-  setGameStarted: (s: boolean) => void;
-}) => {
+export const Settings = () => {
+  const { setSettings: setGameSettings } = useSettings();
+  const { setGameStarted } = useGameState();
   const [settings, setSettings] = useState({
     height: 30,
     width: 30,

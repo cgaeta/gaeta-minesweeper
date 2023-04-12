@@ -1,40 +1,36 @@
 import { useMemo } from "react";
+import { useGameState, useSettings } from "../hooks";
 
-const getProximateCells = (gameBoard: string[][], i: number, j: number) =>
-  gameBoard
-    .slice(Math.max(0, i - 1), Math.min(gameBoard.length + 1, i + 2))
-    .map((row) =>
-      row.slice(Math.max(0, j - 1), Math.min(row.length + 1, j + 2))
-    );
+const getProximateCells = (idx: number, w: number, h: number) => {
+  const y = Math.floor(idx / w);
+  const x = idx % w;
+  let cells: number[] = [];
+
+  for (let i = Math.max(y - 1, 0); i < Math.min(y + 2, h); i++) {
+    for (let j = Math.max(x - 1, 0); j < Math.min(x + 2, w); j++) {
+      cells.push(i * w + j);
+    }
+  }
+
+  return cells;
+};
 
 const collectProximateEmptyCells = (
-  gameBoard: string[][],
-  i: number,
-  j: number,
-  clickedCells: Set<string>
+  mineMap: Set<number>,
+  idx: number,
+  width: number,
+  height: number,
+  clickedCells: Set<number>
 ) => {
-  clickedCells.add(`${i}-${j}`);
+  clickedCells.add(idx);
+  const proximateCells = getProximateCells(idx, width, height);
 
-  if (
-    getProximateCells(gameBoard, i, j)
-      .flat()
-      .every((c) => c !== "!")
-  ) {
-    for (
-      let y = Math.max(0, i - 1);
-      y < Math.min(i + 2, gameBoard.length);
-      y++
-    ) {
-      for (
-        let x = Math.max(0, j - 1);
-        x < Math.min(j + 2, gameBoard[i].length);
-        x++
-      ) {
-        if (!clickedCells.has(`${y}-${x}`)) {
-          collectProximateEmptyCells(gameBoard, y, x, clickedCells);
-        }
-      }
-    }
+  if (proximateCells.every((c) => !mineMap.has(c))) {
+    proximateCells
+      .filter((c) => !clickedCells.has(c))
+      .forEach((c) => {
+        collectProximateEmptyCells(mineMap, c, width, height, clickedCells);
+      });
   }
 
   return clickedCells;
@@ -81,36 +77,33 @@ const CellNumber = ({ number }: { number: number }) => {
 };
 
 export const Cell = ({
-  gameBoard,
-  clickedCells,
-  setClickedCells,
-  flaggedCells,
-  setFlaggedCells,
-  gameLost,
-  setGameLost,
-  i,
-  j,
+  mineMap,
+  idx,
 }: {
-  gameBoard: string[][];
-  clickedCells: Set<string>;
-  setClickedCells: (set: Set<string>) => void;
-  flaggedCells: Set<string>;
-  setFlaggedCells: (set: Set<string>) => void;
-  gameLost: boolean;
-  setGameLost: (lost: boolean) => void;
-  i: number;
-  j: number;
+  mineMap: Set<number>;
+  idx: number;
 }) => {
-  const clicked = clickedCells.has(`${i}-${j}`);
-  const flagged = flaggedCells.has(`${i}-${j}`);
-  const isMine = gameBoard[i][j] === "!";
+  const {
+    clickedCells,
+    setClickedCells,
+    flaggedCells,
+    setFlaggedCells,
+    gameLost,
+    setGameLost,
+  } = useGameState();
+  const {
+    settings: { width: w, height: h },
+  } = useSettings();
+  const clicked = clickedCells.has(idx);
+  const flagged = flaggedCells.has(idx);
+  const isMine = mineMap.has(idx);
   const proximateMines = useMemo(() => {
-    return gameBoard
-      .slice(Math.max(0, i - 1), Math.min(gameBoard.length + 1, i + 2))
-      .map((row) =>
-        row.slice(Math.max(0, j - 1), Math.min(row.length + 1, j + 2))
-      );
-  }, [gameBoard, i, j]);
+    const cells = getProximateCells(idx, w, h).reduce(
+      (acc, cur) => (mineMap.has(cur) ? acc + 1 : acc),
+      0
+    );
+    return cells;
+  }, [mineMap, idx]);
 
   if (clicked)
     return isMine ? (
@@ -119,9 +112,7 @@ export const Cell = ({
       </button>
     ) : (
       <button className="block text-base border-box p-0 text-sm w-8 h-8 bg-gray-400">
-        <CellNumber
-          number={proximateMines.flat().filter((c) => c === "!").length}
-        />
+        <CellNumber number={proximateMines} />
       </button>
     );
 
@@ -133,11 +124,11 @@ export const Cell = ({
           setGameLost(true);
         }
         setClickedCells(
-          new Set(collectProximateEmptyCells(gameBoard, i, j, clickedCells))
+          new Set(collectProximateEmptyCells(mineMap, idx, w, h, clickedCells))
         );
       }}
       onContextMenu={() => {
-        setFlaggedCells(new Set(flaggedCells.add(`${i}-${j}`)));
+        setFlaggedCells(new Set(flaggedCells.add(idx)));
         return false;
       }}
       disabled={gameLost}

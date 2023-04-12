@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useContext } from "react";
+import { GameStateContext, SettingsContext } from "./Context";
 
 export const useDisableContextMenu = () => {
   useEffect(() => {
@@ -12,3 +13,7 @@ export const useDisableContextMenu = () => {
     };
   }, []);
 };
+
+export const useSettings = () => useContext(SettingsContext);
+
+export const useGameState = () => useContext(GameStateContext);
