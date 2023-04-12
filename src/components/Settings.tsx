@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-type GameSettings = { width: number; height: number; mines: number };
+export type GameSettings = { width: number; height: number; mines: number };
 export const Settings = ({
   setGameSettings,
   setGameStarted,

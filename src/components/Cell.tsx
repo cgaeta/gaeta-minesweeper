@@ -129,12 +129,12 @@ export const Cell = ({
     <button
       className="block border-box p-0 text-sm w-8 h-8 border-4 bg-gray-400 border-gray-200 border-r-gray-600 border-b-gray-600"
       onClick={() => {
+        if (isMine && clickedCells.size > 0) {
+          setGameLost(true);
+        }
         setClickedCells(
           new Set(collectProximateEmptyCells(gameBoard, i, j, clickedCells))
         );
-        if (isMine) {
-          setGameLost(true);
-        }
       }}
       onContextMenu={() => {
         setFlaggedCells(new Set(flaggedCells.add(`${i}-${j}`)));

@@ -1,7 +1,8 @@
-import { useMemo, useState, useEffect, type ReactNode } from "react";
+import { useMemo, useState, useRef } from "react";
 import "./App.css";
 import { Cell } from "./components/Cell";
-import { Settings } from "./components/Settings";
+import { Settings, type GameSettings } from "./components/Settings";
+import { useDisableContextMenu } from "./hooks";
 
 const shuffle = <T,>(array: T[]) => {
   for (var i = array.length - 1; i > 0; i--) {
@@ -10,6 +11,34 @@ const shuffle = <T,>(array: T[]) => {
     array[i] = array[j];
     array[j] = temp;
   }
+};
+
+const to2dArray = (arr: string[], height: number, width: number) =>
+  arr
+    .slice(0, height)
+    .map((_ignore, idx) => arr.slice(idx * width, (idx + 1) * width));
+
+const parseFirstClick = /(\d+)-(\d+)/;
+const getIndices = (str: string) => {
+  const res = parseFirstClick.exec(str);
+  if (!res) throw new Error("Invalid indices!");
+
+  const [_str, a, b] = res;
+  const i = parseInt(a);
+  const j = parseInt(b);
+
+  if (isNaN(i) || isNaN(j)) throw new Error("Invalid indices!");
+
+  return [i, j] as const;
+};
+
+const createNewBoard = ({ width, height, mines }: GameSettings) => {
+  let board = new Array(mines)
+    .fill("!")
+    .concat(new Array(width * height - mines));
+
+  shuffle(board);
+  return to2dArray(board, height, width);
 };
 
 function App() {
@@ -22,31 +51,44 @@ function App() {
   const size = settings.width * settings.height;
   const gameWon = clickedCells.size === size - settings.mines && !gameLost;
 
+  const gameBoardRef = useRef<string[][]>();
   const gameBoard = useMemo(() => {
     if (gameStarted) {
-      let board = new Array(settings.mines)
-        .fill("!")
-        .concat(new Array(size - settings.mines));
-      shuffle(board);
-      return board
-        .slice(0, settings.height)
-        .map((_v, i) =>
-          board.slice(i * settings.width, (i + 1) * settings.width)
-        );
+      if (clickedCells.size === 1) {
+        const firstClick = clickedCells.values().next().value;
+        if (firstClick) {
+          let board = gameBoardRef.current?.flat();
+          if (!board) throw new Error("Board not initialized on first click!");
+
+          const [i, j] = getIndices(firstClick);
+
+          while (board[i * settings.height + j] === "!") {
+            shuffle(board);
+          }
+
+          gameBoardRef.current = to2dArray(
+            board,
+            settings.width,
+            settings.height
+          );
+          return gameBoardRef.current;
+        } else {
+          throw new Error("Invalid indices!");
+        }
+      } else if (clickedCells.size === 0) {
+        gameBoardRef.current = createNewBoard(settings);
+        return gameBoardRef.current;
+      }
+
+      if (!gameBoardRef.current)
+        throw new Error("Game board not initialized after first click!");
+      return gameBoardRef.current;
     }
+
     return [];
-  }, [settings, gameStarted]);
+  }, [settings, gameStarted, clickedCells]);
 
-  useEffect(() => {
-    const handleContextMenu = (e: Event) => {
-      e.preventDefault();
-    };
-    document.addEventListener("contextmenu", handleContextMenu);
-
-    return () => {
-      document.removeEventListener("contextmenu", handleContextMenu);
-    };
-  }, []);
+  useDisableContextMenu();
 
   return (
     <div className="App">
